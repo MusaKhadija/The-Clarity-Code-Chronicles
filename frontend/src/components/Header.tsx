@@ -3,6 +3,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import useAuthStore from '@/hooks/useAuthStore';
 
+interface NavigationItem {
+  name: string;
+  href: string;
+  current: boolean;
+  authRequired?: boolean;
+}
+
 const Header: React.FC = () => {
   const router = useRouter();
   const { user, isAuthenticated, walletConnection, connectWallet, disconnectWallet } = useAuthStore();
@@ -25,10 +32,11 @@ const Header: React.FC = () => {
     router.push('/');
   };
 
-  const navigation = [
+  const navigation: NavigationItem[] = [
     { name: 'Home', href: '/', current: router.pathname === '/' },
     { name: 'Quests', href: '/quests', current: router.pathname.startsWith('/quests') },
     { name: 'Badges', href: '/badges', current: router.pathname.startsWith('/badges') },
+    { name: 'Profile', href: '/profile', current: router.pathname === '/profile', authRequired: true },
     { name: 'Leaderboard', href: '/leaderboard', current: router.pathname === '/leaderboard' },
   ];
 
@@ -50,19 +58,21 @@ const Header: React.FC = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  item.current
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navigation
+              .filter((item) => !item.authRequired || isAuthenticated)
+              .map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    item.current
+                      ? 'text-primary-600 bg-primary-50'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              ))}
           </nav>
 
           {/* Wallet Connection */}
@@ -139,20 +149,22 @@ const Header: React.FC = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <nav className="flex flex-col space-y-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    item.current
-                      ? 'text-primary-600 bg-primary-50'
-                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {navigation
+                .filter((item) => !item.authRequired || isAuthenticated)
+                .map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      item.current
+                        ? 'text-primary-600 bg-primary-50'
+                        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
             </nav>
           </div>
         )}

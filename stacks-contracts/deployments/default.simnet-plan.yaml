@@ -64,4 +64,9 @@ plan:
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/nft-badges.clar
             clarity-version: 3
+        - emulated-contract-publish:
+            contract-name: quest-tokens
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/quest-tokens.clar
+            clarity-version: 3
       epoch: "3.1"
