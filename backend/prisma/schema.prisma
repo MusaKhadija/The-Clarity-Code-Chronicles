@@ -1,0 +1,208 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  stacksAddress  String    @unique
+  username       String?   @unique
+  email          String?   @unique
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relations
+  profile        UserProfile?
+  progress       UserProgress[]
+  nftBadges      UserNFTBadge[]
+  
+  @@map("users")
+}
+
+model UserProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  displayName           String?
+  bio                   String?
+  avatarUrl             String?
+  level                 Int      @default(1)
+  experience            Int      @default(0)
+  totalQuestsCompleted  Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_profiles")
+}
+
+model Quest {
+  id            String         @id @default(cuid())
+  title         String
+  description   String
+  category      QuestCategory
+  difficulty    QuestDifficulty
+  estimatedTime Int            // in minutes
+  prerequisites String[]       // Quest IDs as array
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relations
+  steps         QuestStep[]
+  rewards       QuestReward[]
+  userProgress  UserProgress[]
+  
+  @@map("quests")
+}
+
+model QuestStep {
+  id          String        @id @default(cuid())
+  questId     String
+  stepNumber  Int
+  title       String
+  description String
+  type        QuestStepType
+  requirements Json         // Flexible JSON for different requirement types
+  hints       String[]      // Array of hint strings
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Relations
+  quest       Quest         @relation(fields: [questId], references: [id], onDelete: Cascade)
+  
+  @@unique([questId, stepNumber])
+  @@map("quest_steps")
+}
+
+model QuestReward {
+  id          String      @id @default(cuid())
+  questId     String
+  type        RewardType
+  amount      Int?        // For tokens or experience
+  nftBadgeId  String?     // For NFT badges
+  description String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  quest       Quest       @relation(fields: [questId], references: [id], onDelete: Cascade)
+  nftBadge    NFTBadge?   @relation(fields: [nftBadgeId], references: [id])
+  
+  @@map("quest_rewards")
+}
+
+model UserProgress {
+  id             String      @id @default(cuid())
+  userId         String
+  questId        String
+  status         QuestStatus @default(NOT_STARTED)
+  currentStep    Int         @default(1)
+  completedSteps Int[]       // Array of completed step numbers
+  startedAt      DateTime    @default(now())
+  completedAt    DateTime?
+  
+  // Relations
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quest          Quest       @relation(fields: [questId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, questId])
+  @@map("user_progress")
+}
+
+model NFTBadge {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  description  String
+  imageUrl     String
+  category     BadgeCategory
+  rarity       BadgeRarity
+  requirements String[]      // Array of requirement descriptions
+  contractTokenId Int?       // Token ID in the smart contract
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Relations
+  userBadges   UserNFTBadge[]
+  questRewards QuestReward[]
+  
+  @@map("nft_badges")
+}
+
+model UserNFTBadge {
+  id            String    @id @default(cuid())
+  userId        String
+  nftBadgeId    String
+  earnedAt      DateTime  @default(now())
+  transactionId String?   // Stacks transaction ID
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nftBadge      NFTBadge  @relation(fields: [nftBadgeId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, nftBadgeId])
+  @@map("user_nft_badges")
+}
+
+// Enums
+enum QuestCategory {
+  BASICS
+  WALLET
+  TRANSACTIONS
+  SMART_CONTRACTS
+  NFTS
+  DEFI
+  ADVANCED
+}
+
+enum QuestDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum QuestStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum QuestStepType {
+  TUTORIAL
+  TRANSACTION
+  CONTRACT_INTERACTION
+  QUIZ
+  PRACTICAL
+}
+
+enum RewardType {
+  NFT_BADGE
+  TOKENS
+  EXPERIENCE
+}
+
+enum BadgeCategory {
+  ACHIEVEMENT
+  MILESTONE
+  SKILL
+  SPECIAL
+}
+
+enum BadgeRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
