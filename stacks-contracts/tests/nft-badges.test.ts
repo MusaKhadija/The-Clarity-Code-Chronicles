@@ -219,4 +219,174 @@ describe("StacksQuest NFT Badges Contract", () => {
     );
     expect(result2).toBeBool(false);
   });
+
+  it("can update token metadata URI as owner", () => {
+    // Create and mint a badge
+    simnet.callPublicFn(
+      "nft-badges",
+      "create-badge-definition",
+      [
+        Cl.stringAscii("update-test"),
+        Cl.stringUtf8("Update Test Badge"),
+        Cl.stringUtf8("Badge for testing metadata updates"),
+        Cl.stringUtf8("https://stacksquest.com/badges/original.png"),
+        Cl.stringAscii("test"),
+        Cl.stringAscii("common"),
+        Cl.none()
+      ],
+      deployer
+    );
+
+    simnet.callPublicFn(
+      "nft-badges",
+      "mint-badge",
+      [Cl.principal(wallet1), Cl.stringAscii("update-test")],
+      deployer
+    );
+
+    // Update the metadata URI
+    const { result } = simnet.callPublicFn(
+      "nft-badges",
+      "update-token-metadata-uri",
+      [
+        Cl.uint(1),
+        Cl.stringUtf8("https://stacksquest.com/badges/updated.png")
+      ],
+      deployer
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it("cannot update token metadata URI as non-owner", () => {
+    // First create and mint a badge to ensure token exists
+    simnet.callPublicFn(
+      "nft-badges",
+      "create-badge-definition",
+      [
+        Cl.stringAscii("update-uri-test"),
+        Cl.stringUtf8("Update URI Test"),
+        Cl.stringUtf8("Badge for testing URI updates"),
+        Cl.stringUtf8("https://stacksquest.com/badges/original.png"),
+        Cl.stringAscii("test"),
+        Cl.stringAscii("common"),
+        Cl.none()
+      ],
+      deployer
+    );
+
+    simnet.callPublicFn(
+      "nft-badges",
+      "mint-badge",
+      [Cl.principal(wallet1), Cl.stringAscii("update-uri-test")],
+      deployer
+    );
+
+    // Try to update metadata as non-owner
+    const { result } = simnet.callPublicFn(
+      "nft-badges",
+      "update-token-metadata-uri",
+      [
+        Cl.uint(1),
+        Cl.stringUtf8("https://stacksquest.com/badges/hacked.png")
+      ],
+      wallet1
+    );
+    expect(result).toBeErr(Cl.uint(100)); // ERR-OWNER-ONLY
+  });
+
+  it("can update badge definition as owner", () => {
+    // Create a badge definition
+    simnet.callPublicFn(
+      "nft-badges",
+      "create-badge-definition",
+      [
+        Cl.stringAscii("update-def-test"),
+        Cl.stringUtf8("Original Name"),
+        Cl.stringUtf8("Original description"),
+        Cl.stringUtf8("https://stacksquest.com/badges/original.png"),
+        Cl.stringAscii("test"),
+        Cl.stringAscii("common"),
+        Cl.none()
+      ],
+      deployer
+    );
+
+    // Update the badge definition
+    const { result } = simnet.callPublicFn(
+      "nft-badges",
+      "update-badge-definition",
+      [
+        Cl.stringAscii("update-def-test"),
+        Cl.stringUtf8("Updated Name"),
+        Cl.stringUtf8("Updated description"),
+        Cl.stringUtf8("https://stacksquest.com/badges/updated.png"),
+        Cl.bool(true)
+      ],
+      deployer
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it("can deactivate badge definition as owner", () => {
+    // Create a badge definition
+    simnet.callPublicFn(
+      "nft-badges",
+      "create-badge-definition",
+      [
+        Cl.stringAscii("deactivate-test"),
+        Cl.stringUtf8("Deactivate Test"),
+        Cl.stringUtf8("Badge for testing deactivation"),
+        Cl.stringUtf8("https://stacksquest.com/badges/deactivate.png"),
+        Cl.stringAscii("test"),
+        Cl.stringAscii("common"),
+        Cl.none()
+      ],
+      deployer
+    );
+
+    // Deactivate the badge definition
+    const { result } = simnet.callPublicFn(
+      "nft-badges",
+      "deactivate-badge-definition",
+      [Cl.stringAscii("deactivate-test")],
+      deployer
+    );
+    expect(result).toBeOk(Cl.bool(true));
+  });
+
+  it("can check if badge type exists", () => {
+    // Create a badge definition
+    simnet.callPublicFn(
+      "nft-badges",
+      "create-badge-definition",
+      [
+        Cl.stringAscii("exists-test"),
+        Cl.stringUtf8("Exists Test"),
+        Cl.stringUtf8("Badge for testing existence check"),
+        Cl.stringUtf8("https://stacksquest.com/badges/exists.png"),
+        Cl.stringAscii("test"),
+        Cl.stringAscii("common"),
+        Cl.none()
+      ],
+      deployer
+    );
+
+    // Check that badge type exists
+    const { result } = simnet.callReadOnlyFn(
+      "nft-badges",
+      "badge-type-exists",
+      [Cl.stringAscii("exists-test")],
+      deployer
+    );
+    expect(result).toBeBool(true);
+
+    // Check that non-existent badge type doesn't exist
+    const { result: result2 } = simnet.callReadOnlyFn(
+      "nft-badges",
+      "badge-type-exists",
+      [Cl.stringAscii("non-existent")],
+      deployer
+    );
+    expect(result2).toBeBool(false);
+  });
 });
