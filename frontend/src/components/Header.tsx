@@ -36,6 +36,7 @@ const Header: React.FC = () => {
     { name: 'Home', href: '/', current: router.pathname === '/' },
     { name: 'Quests', href: '/quests', current: router.pathname.startsWith('/quests') },
     { name: 'Badges', href: '/badges', current: router.pathname.startsWith('/badges') },
+    { name: 'Staking', href: '/staking', current: router.pathname.startsWith('/staking'), authRequired: true },
     { name: 'Profile', href: '/profile', current: router.pathname === '/profile', authRequired: true },
     { name: 'Leaderboard', href: '/leaderboard', current: router.pathname === '/leaderboard' },
   ];
