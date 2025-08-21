@@ -9,6 +9,10 @@ requirements = []
 path = 'contracts/nft-badges.clar'
 clarity_version = 3
 epoch = 3.1
+[contracts.quest-progression]
+path = 'contracts/quest-progression.clar'
+clarity_version = 3
+epoch = 3.1
 [repl.analysis]
 passes = ['check_checker']
 
