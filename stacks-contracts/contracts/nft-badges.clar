@@ -239,3 +239,85 @@
 (define-private (mint-single-badge (recipient principal))
   (mint-badge recipient "batch-mint")
 )
+
+;; Update token metadata URI (for evolving badges)
+(define-public (update-token-metadata-uri (token-id uint) (new-uri (string-utf8 256)))
+  (let (
+    (token-owner (unwrap! (nft-get-owner? stacksquest-badge token-id) ERR-NOT-FOUND))
+  )
+    ;; Only contract owner can update metadata
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-OWNER-ONLY)
+
+    ;; Update the image URI in metadata
+    (match (map-get? token-metadata token-id)
+      metadata (begin
+        (map-set token-metadata token-id
+          (merge metadata {image: new-uri})
+        )
+        (ok true)
+      )
+      ERR-NOT-FOUND
+    )
+  )
+)
+
+;; Update badge definition (for maintenance)
+(define-public (update-badge-definition
+  (badge-type (string-ascii 32))
+  (name (string-utf8 64))
+  (description (string-utf8 256))
+  (image (string-utf8 256))
+  (is-active bool)
+)
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-OWNER-ONLY)
+
+    ;; Check if badge definition exists
+    (asserts! (is-some (map-get? badge-definitions badge-type)) ERR-NOT-FOUND)
+
+    ;; Update the badge definition
+    (match (map-get? badge-definitions badge-type)
+      existing-def (begin
+        (map-set badge-definitions badge-type
+          (merge existing-def {
+            name: name,
+            description: description,
+            image: image,
+            is-active: is-active
+          })
+        )
+        (ok true)
+      )
+      ERR-NOT-FOUND
+    )
+  )
+)
+
+;; Deactivate badge definition (soft delete)
+(define-public (deactivate-badge-definition (badge-type (string-ascii 32)))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-OWNER-ONLY)
+
+    (match (map-get? badge-definitions badge-type)
+      existing-def (begin
+        (map-set badge-definitions badge-type
+          (merge existing-def {is-active: false})
+        )
+        (ok true)
+      )
+      ERR-NOT-FOUND
+    )
+  )
+)
+
+;; Get all badge types (for admin interface)
+(define-read-only (get-all-badge-types)
+  ;; In a real implementation, this would iterate through all badge types
+  ;; For now, return a list of common badge types
+  (list "first-quest" "wallet-master" "smart-contract" "early-adopter" "blockchain-legend")
+)
+
+;; Check if badge type exists
+(define-read-only (badge-type-exists (badge-type (string-ascii 32)))
+  (is-some (map-get? badge-definitions badge-type))
+)
